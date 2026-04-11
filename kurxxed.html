@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KURXXED!</title>
+  <link rel="icon" type="image/png" href="https://dl.dropboxusercontent.com/scl/fi/3ud8k59x565kxsttse14e/icon.png?rlkey=q0hvaf9twnfboqu5g3b0nwejo&raw=1">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+    }
+    .avatar {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 1rem;
+      box-shadow: 0 8px 30px rgba(127,0,255,0.22);
+      border: 2px solid rgba(255,255,255,0.06);
+    }
+    .social {
+      margin-top: 0.5rem;
+      color: #ccc;
+      font-size: 1rem;
+    }
+    .easter {
+      color: rgba(255,255,255,0.06);
+      font-size: 0.75rem;
+      margin-top: 6px;
+      user-select: none;
+      pointer-events: none;
+      letter-spacing: 0.2px;
+    }
+    .bg-video {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1;
+      filter: brightness(0.32) saturate(0.9);
+    }
+    
+    .start-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(12px);
+      z-index: 20000;
+      cursor: pointer;
+      transition: opacity 0.5s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      letter-spacing: 3px;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      font-weight: 300;
+      opacity: 1;
+    }
+
+    .player {
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 9999;
+    }
+    .player .play-pulse {
+      width: 52px;
+      height: 52px;
+      border-radius: 999px;
+      border: 2px solid rgba(255,255,255,0.06);
+      background: linear-gradient(180deg, rgba(127,0,255,0.18), rgba(127,0,255,0.06));
+      color: #fff;
+      font-size: 20px;
+      display: inline-grid;
+      place-items: center;
+      box-shadow: 0 8px 30px rgba(127,0,255,0.12);
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+    }
+    .player .play-pulse.paused { background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); color: #7f00ff; }
+    h1 {
+      font-size: 3rem;
+      letter-spacing: 1px;
+      margin-bottom: 1rem;
+    }
+    p {
+      font-size: 1.25rem;
+      color: #bbb;
+    }
+    .glow {
+      text-shadow: 0 0 10px #7f00ff, 0 0 20px #7f00ff, 0 0 30px #7f00ff;
+      color: #fff;
+    }
+    footer {
+      position: absolute;
+      bottom: 20px;
+      font-size: 0.9rem;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div id="startOverlay" class="start-overlay">
+    <div>
+      <div style="font-size:1.5rem;letter-spacing:3px;color:rgba(255,255,255,0.85);">Click Anywhere</div>
+      <div style="font-size:0.85rem;color:rgba(61, 61, 61, 0.85);margin-top:8px;text-transform:none;letter-spacing:0;">Takes a while to load</div>
+      <div style="font-size:0.85rem;color:rgba(61, 61, 61, 0.85);margin-top:8px;text-transform:none;letter-spacing:0;">يطول عشان يحمل :(</div>
+    
+    </div>
+  </div>
+  <video id="bgVideo" class="bg-video" autoplay muted loop playsinline aria-hidden="true">
+    <source src="https://kurxxed.eth.limo/videos/rain%20tunnel.mp4" type="video/mp4">
+  </video>
+
+  <div id="player" class="player" title="Play / Pause">
+    <button id="playBtn" class="play-pulse" aria-label="Play">▶</button>
+  </div>
+  <div id="autoplayOverlay" style="display:none;position:fixed;inset:0;z-index:20000;cursor:pointer;"></div>
+  <a href="https://euc.li/kurxxed.eth" target="_blank" rel="noopener noreferrer">
+    <img src="https://euc.li/kurxxed.eth" alt="kurxxed avatar" class="avatar">
+  </a>
+  <h1 class="glow">Kurxxed</h1>
+  <p>Welcome to my Domain <strong>kurxxed.eth</strong> — V 2.0.1</p>
+  <div class="social">Discord: <strong>@kurxxed_xtyle</strong></div>
+  <div class="easter">khlat was here</div>
+  <footer>
+    &copy; <span id="year"></span> kurxxed.eth
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const bgVideo = document.getElementById('bgVideo');
+    const bgSources = [
+      'https://dl.dropboxusercontent.com/scl/fi/vg64l7lurzt3n1cmcgr1b/blue-skys.mp4?rlkey=4h5gogc4loof095ihmlmedspr&raw=1',
+      'https://dl.dropboxusercontent.com/scl/fi/36izz2yegr6jnkf463s72/newyork-street-like.mp4?rlkey=8lrbjau45uksk3tk6ylhgg411&raw=1',
+      'https://dl.dropboxusercontent.com/scl/fi/zrx4isilzxr57g3ps462g/mountain-cloudy.mp4?rlkey=oda4y0z3wsqk53x5p92lyzdjm&raw=1',
+      'https://kurxxed.eth.limo/videos/newyork%20street%20like.mp4',
+      'https://dl.dropboxusercontent.com/scl/fi/2n1yrs94ktwd2uzkdlqbr/rain-tunnel.mp4?rlkey=3wtp0i7z1ng5ctw4sw24tlr0i&raw=1'
+    ];
+    const chosenBg = bgSources[Math.floor(Math.random() * bgSources.length)];
+    const bgSourceEl = bgVideo.querySelector('source');
+    if (bgSourceEl) {
+      bgSourceEl.src = chosenBg;
+    } else {
+      bgVideo.src = chosenBg;
+    }
+    bgVideo.muted = true;
+    bgVideo.load();
+    bgVideo.play().catch(() => {});
+
+    const startOverlay = document.getElementById('startOverlay');
+    const player = document.getElementById('player');
+    
+    const audio = new Audio();
+    audio.preload = 'auto';
+    
+    let currentTrack = 0;
+    const playlist = [
+      { name: 'aba_vaporgod.mp3', url: 'https://dl.dropboxusercontent.com/scl/fi/d5udoh9x8lxndbptbm2yl/A.B.A-VaporGod.mp3?rlkey=p9xvjstgtlvn4xp8ijovot1cs&raw=1' },
+      { name: 'keep_it_tucked.mp3', url: 'https://dl.dropboxusercontent.com/scl/fi/ni13eg3z8xjlg5nm4o5eo/Keep-It-Tucked-ThxSoMch.mp3?rlkey=soaee00owsd0zjn4b4errf4b8&raw=1' },
+      { name: 'sodistilled_-_its_you.mp3', url: 'https://dl.dropboxusercontent.com/scl/fi/yf712bf1by2q3gxjmt7ls/sodistilled-it-s-you.mp3?rlkey=x6s6765demq3p63wu2dlcez6t&raw=1' },
+      { name: 'idontwnacry.mp3', url: 'https://dl.dropboxusercontent.com/scl/fi/avpn0x8d631spl691ye73/i-dont-wna-cry-haste-kurffew.mp3?rlkey=4sv06wnsgy0urpu6xs0ugni4f&raw=1' },
+      { name: 'Fleeting_Frozen_Heart.mp3', url: 'https://dl.dropboxusercontent.com/scl/fi/eoog8ou05q2ojst286m26/Xxtarlit-Fleeting-Frozen-Heart.mp3?rlkey=hzemz8pit1grmn87a4uo2775j&raw=1' },
+      { name: 'Wisp_-_Your_face.mp3', url: 'https://dl.dropboxusercontent.com/scl/fi/z38h7valo9xnhmhelf6jj/Wisp-Your-face.mp3?rlkey=vuc5k69o4lseypu1teco8wxu2&raw=1' },
+      { name: 'HELL_-_D4WN.mp3', url: 'https://dl.dropboxusercontent.com/scl/fi/r6vxvied72jfot0vnbu3b/hell-D4WN.mp3?rlkey=yi3tncwtmfgwkbdbl6km8lx2h&raw=1' },
+      { name: 'HELL_-_D4WN.mp3', url: 'https://dl.dropboxusercontent.com/scl/fi/r6vxvied72jfot0vnbu3b/hell-D4WN.mp3?rlkey=yi3tncwtmfgwkbdbl6km8lx2h&raw=1' },
+      { name: 'id_never_do_that_to_you.mp3', url: 'https://dl.dropboxusercontent.com/scl/fi/d6xcijcy5xqxtvq0oto5p/id-never-do-that-to-you-sodistilled.mp3?rlkey=ymbdrsnnwps1l2v2potq2y0ov&raw=1' },
+      { name: 'if_it_aint_me.mp3', url: 'https://dl.dropboxusercontent.com/scl/fi/eavgo3prttut5xcd7sp0r/if-it-aint-me-whatsaheart.mp3?rlkey=5ad7rj017u2rzai1nbdf3qagx&raw=1' },
+      { name: 'mental_disorder.mp3', url: 'https://dl.dropboxusercontent.com/scl/fi/e0cux6wtll29hdc6172pt/mental-disorder.mp3?rlkey=93fuz076u3wfuril0imsic2vp&raw=1' },
+      { name: 'so_bitter.mp3', url: 'https://dl.dropboxusercontent.com/scl/fi/l1r2z0vkhxht8lu3b6sca/so-bitter.mp3?rlkey=skasihs9xnk7lz6trdp8inxar&raw=1' },
+      { name: 'a_life_without_you.mp3', url: 'https://dl.dropboxusercontent.com/scl/fi/u2030fnt6micy1gd9k7sz/a-life-without-you-D4WN.mp3?rlkey=0jfwjilzs4cmqq7m0qv2v25iu&raw=1' }
+    ];
+
+    function playNextTrackRandomly() {
+      const availableTracks = [...Array(playlist.length).keys()].filter(i => i !== currentTrack);
+      currentTrack = availableTracks[Math.floor(Math.random() * availableTracks.length)];
+      audio.src = playlist[currentTrack].url;
+      audio.play().then(() => {
+        playBtn.textContent = '⏸';
+        playBtn.classList.remove('paused');
+      }).catch(console.warn);
+    }
+
+    
+    audio.addEventListener('ended', playNextTrackRandomly);
+
+  currentTrack = Math.floor(Math.random() * playlist.length);
+  audio.src = playlist[currentTrack].url;
+    const playBtn = document.getElementById('playBtn');
+    
+    const autoplayOverlay = document.getElementById('autoplayOverlay');
+
+    autoplayOverlay.addEventListener('click', startSite);
+    
+    playBtn.addEventListener('click', async () => {
+      try {
+        if (audio.paused) {
+          await audio.play();
+          playBtn.textContent = '⏸';
+          playBtn.classList.remove('paused');
+        } else {
+          audio.pause();
+          playBtn.textContent = '▶';
+          playBtn.classList.add('paused');
+        }
+      } catch (err) {
+        autoplayOverlay.style.display = 'flex';
+      }
+    });
+
+    async function startSite() {
+      try {
+        await audio.play();
+        playBtn.textContent = '⏸';
+        playBtn.classList.remove('paused');
+        startOverlay.style.opacity = '0';
+        player.style.opacity = '1';
+        setTimeout(() => {
+          startOverlay.style.display = 'none';
+        }, 500);
+      } catch (err) {
+        console.warn('Audio start failed:', err);
+      }
+    }
+
+    startOverlay.addEventListener('click', startSite);
+  </script>
+</body>
+</html>
