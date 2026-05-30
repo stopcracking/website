@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KURXXED!</title>
+    <link rel="icon" type="image/png" href="https://dl.dropboxusercontent.com/scl/fi/3ud8k59x565kxsttse14e/icon.png?rlkey=q0hvaf9twnfboqu5g3b0nwejo&raw=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+    <style>
+        :root {
+            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --light-color: rgba(255, 255, 255, 0.5);
+            --user-color: #ffffff;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: #000; font-family: 'Inter', sans-serif;
+            color: white; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* Background Video */
+        .bg-container { position: fixed; inset: 0; z-index: 0; background: #000; }
+        .bg-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.35); opacity: 0; transition: opacity 2s ease; z-index: 0; }
+        .overlay-vignette { position: absolute; inset: 0; background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.8) 100%); pointer-events: none; }
+
+        /* Start Overlay - Glassy */
+        .start-overlay {
+            position: fixed; inset: 0;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(30px);
+            z-index: 100; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            cursor: pointer; transition: opacity 1s ease;
+        }
+
+        .start-text { font-size: 1.2rem; letter-spacing: 5px; color: #fff; text-transform: uppercase; }
+
+        /* Main UI */
+        .main-ui { display: flex; flex-direction: column; align-items: center; gap: 25px; z-index: 10; width: 100%; opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+        .main-ui.visible { opacity: 1; pointer-events: auto; }
+        
+        .hero-text h1 { font-size: 4rem; margin: 0; letter-spacing: -1px; font-weight: 900; }
+        .hero-text p { color: rgba(255,255,255,0.4); font-size: 0.8rem; letter-spacing: 1px; margin-top: 5px; text-transform: uppercase; }
+
+        .skills-row { display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap; justify-content: center; }
+        .skill-tag { background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 4px; font-size: 10px; border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+
+        /* Discord Pill - Transparent Glass */
+        .user-pill {
+            min-width: 220px; max-width: 220px; height: 62px;
+            background: rgba(255, 255, 255, 0.03); 
+            backdrop-filter: blur(15px);
+            border-radius: 40px; display: flex; align-items: center; padding: 0 20px;
+            position: relative; overflow: hidden; 
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: max-width 0.8s var(--spring);
+            cursor: pointer;
+        }
+        .user-pill.expanded { max-width: 650px; }
+
+        .avatar-wrap { position: relative; width: 42px; height: 42px; flex-shrink: 0; margin-right: 12px; }
+        #pfp { width: 100%; height: 100%; border-radius: 50%; }
+        
+        .status-container {
+            position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px;
+            background: #111214; border-radius: 50%; border: 2px solid #111214;
+        }
+        #status-icon { width: 100%; height: 100%; object-fit: contain; }
+
+        .content { z-index: 2; text-align: left; }
+        #display-name { font-size: 16px; font-weight: 700; color: var(--user-color); display: flex; align-items: center; gap: 6px; }
+        .badge-list { display: flex; gap: 3px; }
+        .badge-list img { width: 16px; height: 16px; }
+        #sub-text { font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; margin-top: 2px; }
+
+        .activity-wrap { display: flex; align-items: center; opacity: 0; transform: translateX(10px); transition: 0.5s var(--smooth); position: relative; }
+        .activity-wrap.show { opacity: 1; transform: translateX(0); margin-left: 18px; padding-left: 18px; }
+        .activity-wrap.show::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 1px; height: 25px; background: rgba(255,255,255,0.1); }
+
+        .item { display: none; align-items: center; gap: 12px; }
+        .item.fade-in { display: flex; }
+        .item img { width: 38px; height: 38px; border-radius: 6px; }
+        .item-text b { display: flex; align-items: center; font-size: 9px; color: rgba(255,255,255,0.3); text-transform: uppercase; }
+        .item-text span { font-size: 13px; color: #fff; font-weight: 500; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Visualizer */
+        .visualizer { display: flex; align-items: flex-end; gap: 1.5px; height: 8px; margin-left: 6px; }
+        .bar { width: 1.5px; height: 100%; background: var(--light-color); border-radius: 1px; animation: bounce 1.2s ease-in-out infinite alternate; transform-origin: bottom; }
+        @keyframes bounce { from { transform: scaleY(0.3); } to { transform: scaleY(1); } }
+
+        /* Music Toggle */
+        .music-player {
+            position: fixed; bottom: 30px; right: 30px;
+            background: rgba(255,255,255,0.05); padding: 15px;
+            border-radius: 50%; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer; z-index: 100;
+        }
+
+        footer {
+            position: fixed; bottom: 20px; font-size: 0.7rem;
+            color: rgba(255,255,255,0.03); /* Almost invisible */
+            text-transform: uppercase; letter-spacing: 2px;
+            text-align: center; width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="startOverlay" class="start-overlay" onclick="startSite()">
+        <div class="start-text">Loading...</div>
+        <div style="font-size: 0.6rem; color: rgba(255,255,255,0.2); margin-top: 15px; letter-spacing: 1px;">Takes a while to load</div>
+    </div>
+
+    <div class="bg-container">
+        <video id="bgVideo" class="bg-video" loop playsinline muted autoplay preload="auto"></video>
+        <div class="overlay-vignette"></div>
+    </div>
+
+    <div class="main-ui">
+        <div class="hero-text">
+            <h1>KURXXED</h1>
+            <div class="skills-row">
+                <div class="skill-tag">Web3 Dev</div>
+                <div class="skill-tag">Lua Coder</div>
+                <div class="skill-tag">Python</div>
+                <div class="skill-tag">Java Game Dev</div>
+                <div class="skill-tag">GOAT</div>
+            </div>
+            <p>V 2.0.1 • Domain</p>
+        </div>
+
+        <div class="user-pill" id="main-pill" onclick="handlePillClick(event)">
+            <div class="avatar-wrap">
+                <img id="pfp" src="" crossorigin="anonymous">
+                <div class="status-container"><img id="status-icon" src="" crossorigin="anonymous"></div>
+            </div>
+            <div class="content">
+                <div id="display-name">... <div class="badge-list" id="badges"></div></div>
+                <div id="sub-text">...</div>
+            </div>
+            <div id="activity-container" class="activity-wrap">
+                <div id="spot-item" class="item">
+                    <img id="spot-img" src="" crossorigin="anonymous">
+                    <div class="item-text">
+                        <b>Spotify <div class="visualizer"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div></b>
+                        <span id="spot-song">...</span>
+                    </div>
+                </div>
+                <div id="vsc-item" class="item">
+                    <img id="vsc-img" src="" crossorigin="anonymous">
+                    <div class="item-text"><b>Coding</b><span id="vsc-details">...</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="music-player" onclick="toggleMusic()">
+        <span id="playIcon">▶</span>
+    </div>
+
+    <footer>KHLAAT WAS HERE — KURXXED.ETH</footer>
+
+<script>const U="1196856426153386014",CT=new ColorThief(),A=new Audio();let sId="",vR=false,lId="";function rV(){document.querySelectorAll('#spot-item .bar').forEach(b=>{b.style.animationDelay=(Math.random()*0.8).toFixed(2)+'s';b.style.animationDuration=(1.1+Math.random()*0.9).toFixed(2)+'s';});}const V=[
+'https://dl.dropboxusercontent.com/scl/fi/vg64l7lurzt3n1cmcgr1b/blue-skys.mp4?rlkey=4h5gogc4loof095ihmlmedspr&raw=1',
+'https://dl.dropboxusercontent.com/scl/fi/36izz2yegr6jnkf463s72/newyork-street-like.mp4?rlkey=8lrbjau45uksk3tk6ylhgg411&raw=1',
+'https://dl.dropboxusercontent.com/scl/fi/zrx4isilzxr57g3ps462g/mountain-cloudy.mp4?rlkey=oda4y0z3wsqk53x5p92lyzdjm&raw=1',
+'https://dl.dropboxusercontent.com/scl/fi/2n1yrs94ktwd2uzkdlqbr/rain-tunnel.mp4?rlkey=3wtp0i7z1ng5ctw4sw24tlr0i&raw=1'
+];const P=['https://dl.dropboxusercontent.com/scl/fi/d5udoh9x8lxndbptbm2yl/A.B.A-VaporGod.mp3?rlkey=p9xvjstgtlvn4xp8ijovot1cs&raw=1','https://dl.dropboxusercontent.com/scl/fi/ni13eg3z8xjlg5nm4o5eo/Keep-It-Tucked-ThxSoMch.mp3?rlkey=soaee00owsd0zjn4b4errf4b8&raw=1','https://dl.dropboxusercontent.com/scl/fi/yf712bf1by2q3gxjmt7ls/sodistilled-it-s-you.mp3?rlkey=x6s6765demq3p63wu2dlcez6t&raw=1'];window.onload=()=>{const v=document.getElementById('bgVideo'),t=document.querySelector('#startOverlay .start-text');const ready=()=>{vR=true;v.style.opacity='1';if(t)t.textContent='Click to Enter';};v.addEventListener('loadeddata',ready);v.addEventListener('canplaythrough',ready);v.addEventListener('playing',ready);v.addEventListener('error',()=>{if(t)t.textContent='Video failed to load';});v.src=V[Math.floor(Math.random()*V.length)];v.muted=true;v.autoplay=true;v.volume=0;v.preload='auto';A.src=P[Math.floor(Math.random()*P.length)];v.load()};function startSite(){const v=document.getElementById('bgVideo'),t=document.querySelector('#startOverlay .start-text'),m=document.querySelector('.main-ui');if(!vR){if(t)t.textContent='Loading...';return;}v.play();v.style.opacity='1';A.play();document.getElementById('playIcon').innerText='⏸';document.getElementById('startOverlay').style.opacity='0';setTimeout(()=>{document.getElementById('startOverlay').style.display='none';if(m)m.classList.add('visible');},1e3);}function toggleMusic(){if(A.paused){A.play();document.getElementById('playIcon').innerText='⏸'}else{A.pause();document.getElementById('playIcon').innerText='▶'}}function handlePillClick(e){if(e.target.closest('#spot-item')&&sId)window.open(`https://open.spotify.com/track/${sId}`,'_blank');else window.open(`https://discord.com/users/${U}`,'_blank')}async function update(){try{const [r1,r2]=await Promise.all([fetch(`https://api.lanyard.rest/v1/users/${U}`),fetch(`https://dcdn.dstn.to/profile/${U}`)]);if(!r1.ok||!r2.ok)throw new Error('fetch err');const L=await r1.json(),pr=await r2.json(),d=L?.data||{},usr=d.discord_user||{},st=d.discord_status||'offline',isS=Boolean(d.listening_to_spotify),sp=d.spotify||{},acts=Array.isArray(d.activities)?d.activities:[];document.getElementById('pfp').src=`https://cdn.discordapp.com/avatars/${U}/${usr.avatar||''}.webp`;const dn=document.getElementById('display-name');let n=dn.firstChild;if(!n||n.nodeType!==Node.TEXT_NODE){n=document.createTextNode('');dn.insertBefore(n,dn.firstChild)}n.textContent=usr.global_name||usr.username||'Unknown';const REPO='https://raw.githubusercontent.com/stopcracking/kurxxed/main/';const SMap={online:REPO+'online.png',idle:REPO+'idle.png',dnd:REPO+'DND.png',offline:REPO+'INVISABLE.png'};document.getElementById('status-icon').src=SMap[st]||SMap.offline;const bc=document.getElementById('badges');bc.innerHTML='';Array.isArray(pr.badges)&&pr.badges.forEach(b=>{const i=document.createElement('img');i.src=`https://cdn.discordapp.com/badge-icons/${b.icon}.png`;bc.appendChild(i)});const pill=document.getElementById('main-pill'),wrap=document.getElementById('activity-container'),spot=document.getElementById('spot-item'),vsc=document.getElementById('vsc-item'),sub=document.getElementById('sub-text');let ex=false;if(isS&&sp?.song){ex=true;spot.classList.add('fade-in');document.getElementById('spot-song').innerText=sp.song;sId=sp.track_id||'';if(sId&&sId!==lId){rV();lId=sId}const im=document.getElementById('spot-img');im.src=sp.album_art_url||'';im.onload=()=>{try{const c=CT.getColor(im);document.documentElement.style.setProperty('--light-color',`rgb(${c[0]},${c[1]},${c[2]})`)}catch(e){}}}else{spot.classList.remove('fade-in');sId='';lId='';document.getElementById('spot-song').innerText='...'}const coding=acts.find(a=>a?.name==='Visual Studio Code');if(coding){ex=true;vsc.classList.add('fade-in');document.getElementById('vsc-details').innerText=coding.details||'Coding';const lg=coding.assets?.large_image||'';const vscImg=lg.includes('https/')?`https://${lg.split('https/')[1]}`:(coding.application_id&&lg?`https://cdn.discordapp.com/app-assets/${coding.application_id}/${lg}.png`:'');document.getElementById('vsc-img').src=vscImg}else vsc.classList.remove('fade-in');if(ex){pill.classList.add('expanded');wrap.classList.add('show');sub.style.display='none'}else{pill.classList.remove('expanded');wrap.classList.remove('show');sub.style.display='block';sub.innerText=st;document.documentElement.style.setProperty('--light-color','rgba(255,255,255,0.5)')}}catch(e){console.error(e)}}setInterval(update,3e3);update();</script>
+</body>
+</html>
